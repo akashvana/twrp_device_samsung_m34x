@@ -18,11 +18,13 @@ DEVICE_PATH := device/samsung/m34x
 
 BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/recovery_dtbo
 
+DEVICE_CODENAME := m34x
+
 # Inherit from common tree
 include device/samsung/s5e8825-common/BoardConfigCommon.mk
 
 TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
 
 # TWRP specific build flags
-TW_DEVICE_VERSION := Samsung Galaxy M34 5G
+# TW_DEVICE_VERSION := Samsung Galaxy M34 5G
 TW_FRAMERATE := 120
