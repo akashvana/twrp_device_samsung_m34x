@@ -43,27 +43,36 @@ jobs:
           cd twrp
           repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
 
-      - name: Clone device trees before sync
+      - name: Create local manifest
         run: |
-          cd twrp
-          mkdir -p device/samsung
-          git clone --depth=1 https://github.com/s5e8825/twrp_device_samsung_m34x device/samsung/m34x
-          git clone --depth=1 https://github.com/Flopster101/recovery_samsung_s5e8825-common device/samsung/s5e8825-common
+          mkdir -p twrp/.repo/local_manifests
+          cat > twrp/.repo/local_manifests/m34x.xml << 'MANIFEST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project name="s5e8825/twrp_device_samsung_m34x"
+                     path="device/samsung/m34x"
+                     remote="github"
+                     revision="twrp-12.1" />
+            <project name="Flopster101/recovery_samsung_s5e8825-common"
+                     path="device/samsung/s5e8825-common"
+                     remote="github"
+                     revision="android-12" />
+          </manifest>
+          MANIFEST
 
       - name: Sync source
         run: |
           cd twrp
-          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags 2>&1 || true
-          # Restore our device trees after sync in case they got overwritten
-          rm -rf device/samsung/m34x device/samsung/s5e8825-common
-          git clone --depth=1 https://github.com/s5e8825/twrp_device_samsung_m34x device/samsung/m34x
-          git clone --depth=1 https://github.com/Flopster101/recovery_samsung_s5e8825-common device/samsung/s5e8825-common
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
       - name: Verify device trees
         run: |
+          echo "=== m34x tree ==="
           ls twrp/device/samsung/m34x/
+          echo "=== s5e8825-common tree ==="
           ls twrp/device/samsung/s5e8825-common/
-          cat twrp/device/samsung/m34x/device.mk | head -30
+          echo "=== checking s5e8825.mk exists ==="
+          ls twrp/device/samsung/s5e8825-common/s5e8825.mk
 
       - name: Build TWRP
         run: |
