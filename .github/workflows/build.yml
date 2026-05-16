@@ -56,7 +56,7 @@ jobs:
             <project name="Flopster101/recovery_samsung_s5e8825-common"
                      path="device/samsung/s5e8825-common"
                      remote="github"
-                     revision="android-12" />
+                     revision="twrp-12.1" />
           </manifest>
           MANIFEST
 
@@ -71,7 +71,7 @@ jobs:
           ls twrp/device/samsung/m34x/
           echo "=== s5e8825-common tree ==="
           ls twrp/device/samsung/s5e8825-common/
-          echo "=== checking s5e8825.mk exists ==="
+          echo "=== checking s5e8825.mk ==="
           ls twrp/device/samsung/s5e8825-common/s5e8825.mk
 
       - name: Build TWRP
