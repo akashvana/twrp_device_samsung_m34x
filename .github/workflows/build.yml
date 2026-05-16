@@ -1,0 +1,81 @@
+name: Build TWRP for SM-M346B
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          df -h
+
+      - name: Set up build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache curl flex g++-multilib \
+            gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev \
+            lib32readline-dev lib32z1-dev liblz4-tool libncurses5 \
+            libncurses5-dev libsdl1.2-dev libssl-dev libxml2 \
+            libxml2-utils lzop pngcrush rsync schedtool \
+            squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
+
+      - name: Install repo tool
+        run: |
+          mkdir -p ~/.bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+          chmod a+x ~/.bin/repo
+          echo "$HOME/.bin" >> $GITHUB_PATH
+
+      - name: Configure git
+        run: |
+          git config --global user.email "build@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Initialize TWRP source
+        run: |
+          mkdir -p twrp
+          cd twrp
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
+
+      - name: Sync source
+        run: |
+          cd twrp
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+      - name: Clone device trees
+        run: |
+          cd twrp
+          git clone --depth=1 https://github.com/s5e8825/twrp_device_samsung_m34x device/samsung/m34x
+          git clone --depth=1 https://github.com/Flopster101/recovery_samsung_s5e8825-common device/samsung/s5e8825-common
+
+      - name: Build TWRP
+        run: |
+          cd twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          source build/envsetup.sh
+          lunch twrp_m34x-eng
+          mka recoveryimage -j$(nproc --all)
+
+      - name: Package recovery as TAR
+        run: |
+          cd twrp
+          RECOVERY_IMG=out/target/product/m34x/recovery.img
+          echo "Recovery image size:"
+          ls -lh $RECOVERY_IMG
+          # Package as tar for Heimdall
+          tar -cf recovery-m34x-$(date +%Y%m%d).tar -C out/target/product/m34x recovery.img
+          ls -lh recovery-m34x-*.tar
+
+      - name: Upload recovery image
+        uses: actions/upload-artifact@v4
+        with:
+          name: twrp-m34x
+          path: |
+            twrp/out/target/product/m34x/recovery.img
+            twrp/recovery-m34x-*.tar
+          retention-days: 7
